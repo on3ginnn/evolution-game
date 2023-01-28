@@ -1,7 +1,7 @@
 import pygame
 import os
 import sys
-
+import random
 
 FPS = 50
 
@@ -66,7 +66,6 @@ class Player(pygame.sprite.Sprite):
         pygame.draw.circle(self.image, pygame.Color("blue"),
                            (self.radius, self.radius), self.radius)
         self.rect = self.image.get_rect().move(10, 10)
-        print(self.rect)
 
     # def move(self, filename, pos):
     #
@@ -162,6 +161,17 @@ class Border(pygame.sprite.Sprite):
             self.rect = pygame.Rect(x1, y1, x2 - x1, 1)
 
 
+class Point(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__(all_sprites, point_group)
+        self.radius = random.randint(3, 6)
+        self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
+                                    pygame.SRCALPHA, 32)
+        pygame.draw.circle(self.image, (random.randint(20, 255), random.randint(20, 255), random.randint(20, 255)),
+                           (self.radius, self.radius), self.radius)
+        self.rect = self.image.get_rect().move(random.randint(10, SIZE_FIELD - 10), random.randint(10, SIZE_FIELD - 10))
+
+
 def start_screen():
     intro_text = ["ЗАСТАВКА", "",
                   "Правила игры",
@@ -189,8 +199,6 @@ def start_screen():
     starting = False
     BRAKING = None
 
-    SIZE_FIELD = 1700
-
     while True:
         pos = [0, 0]
 
@@ -206,6 +214,11 @@ def start_screen():
             screen2 = pygame.Surface((SIZE_FIELD, SIZE_FIELD))
 
             screen2.fill('white', (10, 10, 1, 1))
+
+            point_count = random.randint(100, 150)
+            while point_count:
+                Point()
+                point_count -= 1
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -293,11 +306,13 @@ if __name__ == '__main__':
 
     clock = pygame.time.Clock()
 
+    SIZE_FIELD = 1700
+
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
     vertical_borders = pygame.sprite.Group()
     horizontal_borders = pygame.sprite.Group()
-    scores_group = pygame.sprite.Group()
+    point_group = pygame.sprite.Group()
 
     start_screen()
