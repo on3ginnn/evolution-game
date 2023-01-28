@@ -60,10 +60,10 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, player_group)
         self.radius = 5
-        self.speed = 5
+        self.speed = self.radius // 2
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                     pygame.SRCALPHA, 32)
-        pygame.draw.circle(self.image, pygame.Color("blue"),
+        pygame.draw.circle(self.image, pygame.Color("white"),
                            (self.radius, self.radius), self.radius)
         self.rect = self.image.get_rect().move(10, 10)
 
@@ -104,20 +104,38 @@ class Player(pygame.sprite.Sprite):
     #         mapFile.write('\n'.join(level_map))
 
     def update(self, pos):
-        print(pos)
+        print()
         self.rect = self.rect.move((pos[0], pos[1]))
-        print(self.rect)
         if pygame.sprite.spritecollideany(self, horizontal_borders) and pos[1] != 0:
+            print('-----------------------')
             self.rect.y += (pos[1] * -1)
-            print('-----------------------------------')
 
         if pygame.sprite.spritecollideany(self, vertical_borders) and pos[0] != 0:
             self.rect.x += (pos[0] * -1)
-            print('===============================')
-        print(self.rect)
+
+        scrores_add = pygame.sprite.spritecollide(self, point_group, False)
+        if scrores_add:
+            print(self.radius)
+
+            for i in scrores_add:
+                print(((i.rect.w // 2) - self.radius), '------')
+                self.radius += (i.rect.w // 4)
+                point_group.remove(i)
+                all_sprites.remove(i)
 
 
+                print(self.radius)
 
+            self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
+                                        pygame.SRCALPHA, 32)
+            pygame.draw.circle(self.image, pygame.Color("white"),
+                               (self.radius, self.radius), self.radius)
+            print(self.rect)
+            self.rect.w, self.rect.h = self.radius * 2, self.radius * 2
+            # self.rect = self.image.get_rect().move(self.radius // 2, self.radius // 2)
+            print(self.rect)
+
+            # self.rect = pygame.Rect(x, y, 2 * radius, 2 * radius)
 
 
 # def generate_level(level, *args):
@@ -164,13 +182,17 @@ class Border(pygame.sprite.Sprite):
 class Point(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, point_group)
-        self.radius = random.randint(3, 6)
+        self.radius = random.randint(4, 6)
+        self.score = self.radius
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                     pygame.SRCALPHA, 32)
         pygame.draw.circle(self.image, (random.randint(20, 255), random.randint(20, 255), random.randint(20, 255)),
                            (self.radius, self.radius), self.radius)
         self.rect = self.image.get_rect().move(random.randint(10, SIZE_FIELD - 10), random.randint(10, SIZE_FIELD - 10))
 
+    # def update(self, pos):
+    #     if pygame.sprite.spritecollideany(self, horizontal_borders):
+    #     print(2, '----------------------------------------------------------')
 
 def start_screen():
     intro_text = ["ЗАСТАВКА", "",
@@ -248,21 +270,19 @@ def start_screen():
                 if player:
                     if event.key == pygame.K_RIGHT:
                         K_RIGHT = False
-                        BRAKING = [player.speed + player.radius, BRAKING[1] if BRAKING else 0]
-                        print(BRAKING)
+                        BRAKING = [player.speed, BRAKING[1] if BRAKING else 0]
                     elif event.key == pygame.K_LEFT:
                         K_LEFT = False
-                        BRAKING = [-1 * (player.speed + player.radius), BRAKING[1] if BRAKING else 0]
+                        BRAKING = [-1 * (player.speed), BRAKING[1] if BRAKING else 0]
                     elif event.key == pygame.K_UP:
                         K_UP = False
-                        BRAKING = [BRAKING[0] if BRAKING else 0, -1 * (player.speed + player.radius)]
+                        BRAKING = [BRAKING[0] if BRAKING else 0, -1 * (player.speed)]
                     elif event.key == pygame.K_DOWN:
                         K_DOWN = False
-                        BRAKING = [BRAKING[0] if BRAKING else 0, player.speed + player.radius]
+                        BRAKING = [BRAKING[0] if BRAKING else 0, player.speed]
             elif event.type == pygame.MOUSEBUTTONUP:
                 if player is None:
                     starting = True
-        print(K_DOWN)
         if K_UP:
             pos[1] = player.speed * -1
         elif K_DOWN:
@@ -271,7 +291,6 @@ def start_screen():
             pos[0] = player.speed * -1
         elif K_RIGHT:
             pos[0] = player.speed * 1
-        print(K_DOWN)
         if BRAKING and True not in (K_LEFT, K_RIGHT, K_UP, K_DOWN):
             if BRAKING[0]:
                 if BRAKING[0] > 0:
