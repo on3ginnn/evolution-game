@@ -264,7 +264,7 @@ def start_screen():
         elif K_RIGHT:
             pos[0] = player.speed * 1
 
-        if BRAKING:
+        if BRAKING and True not in (K_LEFT, K_RIGHT, K_UP, K_DOWN):
             if BRAKING[0]:
                 if BRAKING[0] > 0:
                     BRAKING[0] -= 1
