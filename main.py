@@ -60,7 +60,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, player_group)
         self.radius = 5
-        self.speed = self.radius // 2
+        self.speed = 5
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                     pygame.SRCALPHA, 32)
         pygame.draw.circle(self.image, pygame.Color("white"),
@@ -105,12 +105,13 @@ class Player(pygame.sprite.Sprite):
 
     def update(self, pos):
         print()
+        print(pos, '===========')
         self.rect = self.rect.move((pos[0], pos[1]))
-        if pygame.sprite.spritecollideany(self, horizontal_borders) and pos[1] != 0:
+        if pygame.sprite.spritecollideany(self, horizontal_borders) and pos[1]:
             print('-----------------------')
             self.rect.y += (pos[1] * -1)
 
-        if pygame.sprite.spritecollideany(self, vertical_borders) and pos[0] != 0:
+        if pygame.sprite.spritecollideany(self, vertical_borders) and pos[0]:
             self.rect.x += (pos[0] * -1)
 
         def check_spritecollid():
@@ -148,7 +149,8 @@ class Player(pygame.sprite.Sprite):
 
 
         scrores_add = pygame.sprite.spritecollide(self, point_group, False)
-        if scrores_add:
+        if scrores_add\
+                :
             print(self.radius)
             old_radius = self.radius
             for i in scrores_add:
@@ -175,6 +177,9 @@ class Player(pygame.sprite.Sprite):
 
 
             check_spritecollid()
+
+            # self.speed = self.radius
+
             # self.rect = pygame.Rect(x, y, 2 * radius, 2 * radius)
 
 
@@ -222,13 +227,14 @@ class Border(pygame.sprite.Sprite):
 class Point(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, point_group)
-        self.radius = random.choice([4, 6, 8])
+        self.radius = random.randint(3, 7)
         self.score = self.radius
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                     pygame.SRCALPHA, 32)
         pygame.draw.circle(self.image, (random.randint(20, 255), random.randint(20, 255), random.randint(20, 255)),
                            (self.radius, self.radius), self.radius)
-        self.rect = self.image.get_rect().move(random.randint(10, SIZE_FIELD - 10), random.randint(10, SIZE_FIELD - 10))
+        self.rect = self.image.get_rect().move(random.randint(1, SIZE_FIELD - self.radius * 2),
+                                               random.randint(1, SIZE_FIELD - self.radius * 2))
 
     # def update(self, pos):
     #     if pygame.sprite.spritecollideany(self, horizontal_borders):
@@ -316,13 +322,15 @@ def start_screen():
                         BRAKING = [-1 * (player.speed), BRAKING[1] if BRAKING else 0]
                     elif event.key == pygame.K_UP:
                         K_UP = False
-                        BRAKING = [BRAKING[0] if BRAKING else 0, -1 * (player.speed)]
+                        BRAKING = [BRAKING[0] if BRAKING else 0, -1 * player.speed]
+                        print(BRAKING, '--------')
                     elif event.key == pygame.K_DOWN:
                         K_DOWN = False
                         BRAKING = [BRAKING[0] if BRAKING else 0, player.speed]
             elif event.type == pygame.MOUSEBUTTONUP:
                 if player is None:
                     starting = True
+
         if K_UP:
             pos[1] = player.speed * -1
         elif K_DOWN:
@@ -331,6 +339,7 @@ def start_screen():
             pos[0] = player.speed * -1
         elif K_RIGHT:
             pos[0] = player.speed * 1
+
         if BRAKING and True not in (K_LEFT, K_RIGHT, K_UP, K_DOWN):
             if BRAKING[0]:
                 if BRAKING[0] > 0:
@@ -346,16 +355,28 @@ def start_screen():
             y = BRAKING[1]
             pos = [x, y]
             print(pos)
-            if BRAKING == [0, 0]:
+            if pos == [0, 0]:
                 BRAKING = None
-        #
+
         if player:
+            # изменение скорости по соотношению с размером
+            if player.radius < 50:
+                player.speed = 5
+            elif player.radius < 250:
+                player.speed = 4
+            elif player.radius < 500:
+                player.speed = 3
+            elif player.radius < 750:
+                player.speed = 2
+            elif player.radius < 850:
+                player.speed = 1
+
+            # изменение ракурса камеры относительно и+грока
             camera.update(player)
             for sprite in all_sprites:
                 camera.apply(sprite)
             print(player.rect.x, player.rect.y)
 
-        # tiles_group.draw(screen2)
         screen.blit(screen2, (0, 0))
         all_sprites.draw(screen)
 
