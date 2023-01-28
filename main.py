@@ -113,28 +113,68 @@ class Player(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, vertical_borders) and pos[0] != 0:
             self.rect.x += (pos[0] * -1)
 
+        def check_spritecollid():
+            coef = 1
+            # по оси Oy
+            while pygame.sprite.spritecollideany(self, horizontal_borders):
+                self.rect = self.rect.move((0, coef))
+                if pygame.sprite.spritecollideany(self, horizontal_borders):
+                    coef *= -1
+                    self.rect = self.rect.move((0, coef))
+                else:
+                    continue
+
+                self.rect = self.rect.move((0, coef))
+                if pygame.sprite.spritecollideany(self, horizontal_borders):
+                    coef *= -1
+                    self.rect = self.rect.move((0, coef))
+                    coef += 1
+
+            coef = 1
+            # по оси Ox
+            while pygame.sprite.spritecollideany(self, vertical_borders):
+                self.rect = self.rect.move((coef, 0))
+                if pygame.sprite.spritecollideany(self, vertical_borders):
+                    coef *= -1
+                    self.rect = self.rect.move((coef, 0))
+                else:
+                    continue
+
+                self.rect = self.rect.move((coef, 0))
+                if pygame.sprite.spritecollideany(self, vertical_borders):
+                    coef *= -1
+                    self.rect = self.rect.move((coef, 0))
+                    coef += 1
+
+
         scrores_add = pygame.sprite.spritecollide(self, point_group, False)
         if scrores_add:
             print(self.radius)
-
+            old_radius = self.radius
             for i in scrores_add:
-                print(((i.rect.w // 2) - self.radius), '------')
                 self.radius += (i.rect.w // 4)
                 point_group.remove(i)
                 all_sprites.remove(i)
 
-
-                print(self.radius)
+            print(self.radius)
 
             self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                         pygame.SRCALPHA, 32)
             pygame.draw.circle(self.image, pygame.Color("white"),
                                (self.radius, self.radius), self.radius)
+            print(self.radius - old_radius)
+            print(self.radius - old_radius)
             print(self.rect)
+            self.rect.x, self.rect.y = self.rect.x - (self.radius - old_radius), \
+                self.rect.y - (self.radius - old_radius)
             self.rect.w, self.rect.h = self.radius * 2, self.radius * 2
             # self.rect = self.image.get_rect().move(self.radius // 2, self.radius // 2)
             print(self.rect)
 
+
+
+
+            check_spritecollid()
             # self.rect = pygame.Rect(x, y, 2 * radius, 2 * radius)
 
 
@@ -182,7 +222,7 @@ class Border(pygame.sprite.Sprite):
 class Point(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, point_group)
-        self.radius = random.randint(4, 6)
+        self.radius = random.choice([4, 6, 8])
         self.score = self.radius
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                     pygame.SRCALPHA, 32)
