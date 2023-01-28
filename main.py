@@ -226,12 +226,20 @@ def start_screen():
             elif event.type == pygame.KEYDOWN:
                 if player:
                     if event.key == pygame.K_RIGHT:
+                        if K_LEFT:
+                            K_LEFT = False
                         K_RIGHT = True
                     elif event.key == pygame.K_LEFT:
+                        if K_RIGHT:
+                            K_RIGHT = False
                         K_LEFT = True
                     elif event.key == pygame.K_UP:
+                        if K_DOWN:
+                            K_DOWN = False
                         K_UP = True
                     elif event.key == pygame.K_DOWN:
+                        if K_UP:
+                            K_UP = False
                         K_DOWN = True
 
                 if player is None:
@@ -254,7 +262,7 @@ def start_screen():
             elif event.type == pygame.MOUSEBUTTONUP:
                 if player is None:
                     starting = True
-
+        print(K_DOWN)
         if K_UP:
             pos[1] = player.speed * -1
         elif K_DOWN:
@@ -263,7 +271,7 @@ def start_screen():
             pos[0] = player.speed * -1
         elif K_RIGHT:
             pos[0] = player.speed * 1
-
+        print(K_DOWN)
         if BRAKING and True not in (K_LEFT, K_RIGHT, K_UP, K_DOWN):
             if BRAKING[0]:
                 if BRAKING[0] > 0:
