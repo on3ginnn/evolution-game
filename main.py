@@ -104,11 +104,8 @@ class Player(pygame.sprite.Sprite):
     #         mapFile.write('\n'.join(level_map))
 
     def update(self, pos):
-        print()
-        print(pos, '===========')
         self.rect = self.rect.move((pos[0], pos[1]))
         if pygame.sprite.spritecollideany(self, horizontal_borders) and pos[1]:
-            print('-----------------------')
             self.rect.y += (pos[1] * -1)
 
         if pygame.sprite.spritecollideany(self, vertical_borders) and pos[0]:
@@ -147,33 +144,22 @@ class Player(pygame.sprite.Sprite):
                     self.rect = self.rect.move((coef, 0))
                     coef += 1
 
-
         scrores_add = pygame.sprite.spritecollide(self, point_group, False)
-        if scrores_add\
-                :
-            print(self.radius)
+        if scrores_add:
             old_radius = self.radius
             for i in scrores_add:
                 self.radius += (i.rect.w // 4)
                 point_group.remove(i)
                 all_sprites.remove(i)
 
-            print(self.radius)
 
             self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                         pygame.SRCALPHA, 32)
             pygame.draw.circle(self.image, pygame.Color("white"),
                                (self.radius, self.radius), self.radius)
-            print(self.radius - old_radius)
-            print(self.radius - old_radius)
-            print(self.rect)
             self.rect.x, self.rect.y = self.rect.x - (self.radius - old_radius), \
                 self.rect.y - (self.radius - old_radius)
             self.rect.w, self.rect.h = self.radius * 2, self.radius * 2
-            # self.rect = self.image.get_rect().move(self.radius // 2, self.radius // 2)
-            print(self.rect)
-
-
 
 
             check_spritecollid()
@@ -225,7 +211,7 @@ class Border(pygame.sprite.Sprite):
 
 
 class Point(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, limited_pos=None):
         super().__init__(all_sprites, point_group)
         self.radius = random.randint(3, 7)
         self.score = self.radius
@@ -233,12 +219,11 @@ class Point(pygame.sprite.Sprite):
                                     pygame.SRCALPHA, 32)
         pygame.draw.circle(self.image, (random.randint(20, 255), random.randint(20, 255), random.randint(20, 255)),
                            (self.radius, self.radius), self.radius)
-        self.rect = self.image.get_rect().move(random.randint(1, SIZE_FIELD - self.radius * 2),
-                                               random.randint(1, SIZE_FIELD - self.radius * 2))
+        x, y = random.randint(1, SIZE_FIELD - self.radius * 2), random.randint(1, SIZE_FIELD - self.radius * 2)
+        if limited_pos:
+            x, y = random.randint(limited_pos['x'][0], limited_pos['x'][1]), random.randint(limited_pos['y'][0], limited_pos['y'][1])
+        self.rect = self.image.get_rect().move(x, y)
 
-    # def update(self, pos):
-    #     if pygame.sprite.spritecollideany(self, horizontal_borders):
-    #     print(2, '----------------------------------------------------------')
 
 def start_screen():
     intro_text = ["ЗАСТАВКА", "",
@@ -265,7 +250,6 @@ def start_screen():
     camera = Camera()
 
     starting = False
-    BRAKING = None
 
     while True:
         pos = [0, 0]
@@ -284,9 +268,8 @@ def start_screen():
             screen2.fill('white', (10, 10, 1, 1))
 
             point_count = random.randint(100, 150)
-            while point_count:
+            for i in range(point_count):
                 Point()
-                point_count -= 1
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -316,17 +299,12 @@ def start_screen():
                 if player:
                     if event.key == pygame.K_RIGHT:
                         K_RIGHT = False
-                        BRAKING = [player.speed, BRAKING[1] if BRAKING else 0]
                     elif event.key == pygame.K_LEFT:
                         K_LEFT = False
-                        BRAKING = [-1 * (player.speed), BRAKING[1] if BRAKING else 0]
                     elif event.key == pygame.K_UP:
                         K_UP = False
-                        BRAKING = [BRAKING[0] if BRAKING else 0, -1 * player.speed]
-                        print(BRAKING, '--------')
                     elif event.key == pygame.K_DOWN:
                         K_DOWN = False
-                        BRAKING = [BRAKING[0] if BRAKING else 0, player.speed]
             elif event.type == pygame.MOUSEBUTTONUP:
                 if player is None:
                     starting = True
@@ -340,25 +318,19 @@ def start_screen():
         elif K_RIGHT:
             pos[0] = player.speed * 1
 
-        if BRAKING and True not in (K_LEFT, K_RIGHT, K_UP, K_DOWN):
-            if BRAKING[0]:
-                if BRAKING[0] > 0:
-                    BRAKING[0] -= 1
-                else:
-                    BRAKING[0] += 1
-            x = BRAKING[0]
-            if BRAKING[1]:
-                if BRAKING[1] > 0:
-                    BRAKING[1] -= 1
-                else:
-                    BRAKING[1] += 1
-            y = BRAKING[1]
-            pos = [x, y]
-            print(pos)
-            if pos == [0, 0]:
-                BRAKING = None
-
         if player:
+            # добавление микробов на поле
+            if len(list(point_group)) < point_count and random.choice(list(map(lambda x: 0, range(10))) + [1]):
+                limited_pos = {'x': [], 'y': []}
+                # расчет координат новых микробов учитывая положение камеры
+                for i in vertical_borders:
+                    limited_pos['x'].append(i.rect.x)
+                for i in horizontal_borders:
+                    limited_pos['y'].append(i.rect.y)
+
+                p = Point(limited_pos)
+                print(p.rect)
+
             # изменение скорости по соотношению с размером
             if player.radius < 50:
                 player.speed = 5
@@ -375,15 +347,22 @@ def start_screen():
             camera.update(player)
             for sprite in all_sprites:
                 camera.apply(sprite)
-            print(player.rect.x, player.rect.y)
+            # print(player.rect.x, player.rect.y)
+        # all_sprites.draw(screen2)
+
+        point_group.draw(screen2)
+        vertical_borders.draw(screen2)
+        horizontal_borders.draw(screen2)
+        player_group.draw(screen2)
 
         screen.blit(screen2, (0, 0))
-        all_sprites.draw(screen)
 
         all_sprites.update(pos)
 
         pygame.display.flip()
         clock.tick(FPS)
+        if player:
+            screen2.fill('black')
 
 
 if __name__ == '__main__':
