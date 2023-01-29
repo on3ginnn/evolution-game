@@ -195,6 +195,18 @@ class Player(pygame.sprite.Sprite):
     # return new_player, render_list
 
 
+class Scale(pygame.sprite.Sprite):
+    def __init__(self):
+        for i in horizontal_borders:
+            print(i.rect)
+            i.rect.w //= 2
+            self.image = pygame.Surface([i.rect.w, 1])
+            self.image.fill('yellow')
+
+            print(i.rect)
+            print()
+
+
 class Border(pygame.sprite.Sprite):
     def __init__(self, x1, y1, x2, y2):
         super().__init__(all_sprites)
@@ -206,14 +218,14 @@ class Border(pygame.sprite.Sprite):
         else:
             self.add(horizontal_borders)
             self.image = pygame.Surface([x2 - x1, 1])
-            self.image.fill('red')
+            self.image.fill('yellow')
             self.rect = pygame.Rect(x1, y1, x2 - x1, 1)
 
 
 class Point(pygame.sprite.Sprite):
     def __init__(self, limited_pos=None):
         super().__init__(all_sprites, point_group)
-        self.radius = random.randint(3, 7)
+        self.radius = random.randint(RANGEPOINTRADIUS[0], RANGEPOINTRADIUS[1])
         self.score = self.radius
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                     pygame.SRCALPHA, 32)
@@ -225,7 +237,69 @@ class Point(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(x, y)
 
 
+def generate_field(SIZE_FIELD, player=None):
+    global RANGEPOINTRADIUS
+    if not player:
+        player = Player()
+
+        Border(0, 0, SIZE_FIELD - 1, 0)
+        Border(0, SIZE_FIELD - 1, SIZE_FIELD - 1, SIZE_FIELD - 1)
+        Border(0, 0, 0, SIZE_FIELD - 1)
+        Border(SIZE_FIELD - 1, 0, SIZE_FIELD - 1, SIZE_FIELD - 1)
+
+        POINTCOUNT = random.randint(100, 150)
+        for i in range(POINTCOUNT):
+            Point()
+
+        screen2 = pygame.Surface((SIZE_FIELD, SIZE_FIELD))
+
+        return player, screen2
+    else:
+        player.radius //= 2
+        player.image = pygame.Surface((2 * player.radius, 2 * player.radius),
+                                    pygame.SRCALPHA, 32)
+        pygame.draw.circle(player.image, pygame.Color("white"),
+                           (player.radius, player.radius), player.radius)
+        player.rect.x, player.rect.y = player.rect.x // 2, player.rect.y // 2
+        player.rect.w, player.rect.h = player.radius * 2, player.radius * 2
+
+        for i in horizontal_borders:
+            i.rect.w //= 2
+
+            i.rect.y, i.rect.x = i.rect.y // 2, i.rect.x // 2
+            i.image = pygame.Surface([i.rect.w, 1])
+            i.image.fill('yellow')
+
+        for i in vertical_borders:
+            i.rect.h //= 2
+            i.rect.y, i.rect.x = i.rect.y // 2, i.rect.x // 2
+            i.image = pygame.Surface([1, i.rect.h])
+            i.image.fill('red')
+        for i in point_group:
+
+            i.rect.y //= 2
+            i.rect.x //= 2
+            if i.rect.w <= 1:
+                point_group.remove(i)
+                all_sprites.remove(i)
+            else:
+                i_radius = i.rect.w // 2
+                i.image = pygame.Surface((2 * i_radius, 2 * i_radius),
+                                            pygame.SRCALPHA, 32)
+                pygame.draw.circle(i.image,
+                                   (random.randint(20, 255), random.randint(20, 255), random.randint(20, 255)),
+                                   (i_radius, i_radius), i_radius)
+        RANGEPOINTRADIUS = (2 if RANGEPOINTRADIUS[0] // 2 < 2 else RANGEPOINTRADIUS[0] // 2,
+                            4 if RANGEPOINTRADIUS[1] // 2 < 2 else RANGEPOINTRADIUS[1] // 2)
+
+
+
+
+        return player
+
+
 def start_screen():
+    global POINTCOUNT, SIZE_FIELD
     intro_text = ["ЗАСТАВКА", "",
                   "Правила игры",
                   ""]
@@ -248,28 +322,15 @@ def start_screen():
     player = None
     K_RIGHT = K_LEFT = K_UP = K_DOWN = False
     camera = Camera()
-
     starting = False
 
     while True:
         pos = [0, 0]
 
         if starting:
-            player = Player()
-            Border(0, 0, SIZE_FIELD - 1, 0)
-            Border(0, SIZE_FIELD - 1, SIZE_FIELD - 1, SIZE_FIELD - 1)
-            Border(0, 0, 0, SIZE_FIELD - 1)
-            Border(SIZE_FIELD - 1, 0, SIZE_FIELD - 1, SIZE_FIELD - 1)
+            player, screen2 = generate_field(SIZE_FIELD)
             starting = False
-
             screen.fill('black')
-            screen2 = pygame.Surface((SIZE_FIELD, SIZE_FIELD))
-
-            screen2.fill('white', (10, 10, 1, 1))
-
-            point_count = random.randint(100, 150)
-            for i in range(point_count):
-                Point()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -319,8 +380,17 @@ def start_screen():
             pos[0] = player.speed * 1
 
         if player:
+            # изменение скорости, по соотношению с размером игрока, и масштаба
+            if player.radius >= 200:
+                player.speed -= (1 if player.speed > 1 else 0)
+                SIZE_FIELD = 1450
+                POINTCOUNT //= 2
+                print(SIZE_FIELD)
+                print(player.speed)
+                player = generate_field(SIZE_FIELD, player=player)
+
             # добавление микробов на поле
-            if len(list(point_group)) < point_count and random.choice(list(map(lambda x: 0, range(10))) + [1]):
+            if len(list(point_group)) < POINTCOUNT and random.choice(list(map(lambda x: 0, range(10))) + [1]):
                 limited_pos = {'x': [], 'y': []}
                 # расчет координат новых микробов учитывая положение камеры
                 for i in vertical_borders:
@@ -329,29 +399,21 @@ def start_screen():
                     limited_pos['y'].append(i.rect.y)
 
                 p = Point(limited_pos)
-                print(p.rect)
-
-            # изменение скорости по соотношению с размером
-            if player.radius < 50:
-                player.speed = 5
-            elif player.radius < 250:
-                player.speed = 4
-            elif player.radius < 500:
-                player.speed = 3
-            elif player.radius < 750:
-                player.speed = 2
-            elif player.radius < 850:
-                player.speed = 1
+                # Scale()
+            while len(list(point_group)) > POINTCOUNT:
+                remove_obj = random.choice(list(point_group))
+                point_group.remove(remove_obj)
+                all_sprites.remove(remove_obj)
 
             # изменение ракурса камеры относительно и+грока
             camera.update(player)
             for sprite in all_sprites:
                 camera.apply(sprite)
-            # print(player.rect.x, player.rect.y)
-        # all_sprites.draw(screen2)
 
         point_group.draw(screen2)
         vertical_borders.draw(screen2)
+        # for i in horizontal_borders:
+        #     print(i.rect)
         horizontal_borders.draw(screen2)
         player_group.draw(screen2)
 
@@ -373,7 +435,9 @@ if __name__ == '__main__':
 
     clock = pygame.time.Clock()
 
-    SIZE_FIELD = 1700
+    SIZE_FIELD = 2700
+    RANGEPOINTRADIUS = (3, 7)
+    POINTCOUNT = random.randint(100, 150)
 
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
