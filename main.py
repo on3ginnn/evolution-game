@@ -66,6 +66,8 @@ class Player(pygame.sprite.Sprite):
         pygame.draw.circle(self.image, pygame.Color("white"),
                            (self.radius, self.radius), self.radius)
         self.rect = self.image.get_rect().move(10, 10)
+        self.mask = pygame.mask.from_surface(self.image)
+
 
     # def move(self, filename, pos):
     #
@@ -144,67 +146,23 @@ class Player(pygame.sprite.Sprite):
                     self.rect = self.rect.move((coef, 0))
                     coef += 1
 
-        scrores_add = pygame.sprite.spritecollide(self, point_group, False)
-        if scrores_add:
-            old_radius = self.radius
-            for i in scrores_add:
+        old_radius = self.radius
+        for i in point_group:
+            if pygame.sprite.collide_mask(self, i):
                 self.radius += (i.rect.w // 4)
                 point_group.remove(i)
                 all_sprites.remove(i)
 
+                self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
+                                            pygame.SRCALPHA, 32)
+                pygame.draw.circle(self.image, pygame.Color("white"),
+                                   (self.radius, self.radius), self.radius)
+                self.rect.x, self.rect.y = self.rect.x - (self.radius - old_radius), \
+                    self.rect.y - (self.radius - old_radius)
+                self.rect.w, self.rect.h = self.radius * 2, self.radius * 2
+                self.mask = pygame.mask.from_surface(self.image)
 
-            self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
-                                        pygame.SRCALPHA, 32)
-            pygame.draw.circle(self.image, pygame.Color("white"),
-                               (self.radius, self.radius), self.radius)
-            self.rect.x, self.rect.y = self.rect.x - (self.radius - old_radius), \
-                self.rect.y - (self.radius - old_radius)
-            self.rect.w, self.rect.h = self.radius * 2, self.radius * 2
-
-
-            check_spritecollid()
-
-            # self.speed = self.radius
-
-            # self.rect = pygame.Rect(x, y, 2 * radius, 2 * radius)
-
-
-# def generate_level(level, *args):
-#     render_list = list() if not args else args[0]
-#     new_player, x, y = None, None, None
-#     for i in tiles_group:
-#         tiles_group.remove(i)
-#         all_sprites.remove(i)
-#
-#     for y in range(len(level)):
-#         if not args:
-#             render_list.append([])
-#         for x in range(len(level[y])):
-#             if level[y][x] == '.':
-#                 render_list[y].append(Tile('empty', x, y))
-#             elif level[y][x] == '#':
-#                 render_list[y].append(Tile('wall', x, y))
-#             elif not args and level[y][x] == '@':
-#                 render_list[y].append(Tile('empty', x, y))
-#                 new_player = Player(x, y)
-#             elif args and level[y][x] == '@':
-#                 args[1].rect.x = x * 50 + 15
-#                 args[1].rect.y = y * 50 + 5
-#                 render_list[y].append(Tile('empty', x, y))
-
-    # return new_player, render_list
-
-
-class Scale(pygame.sprite.Sprite):
-    def __init__(self):
-        for i in horizontal_borders:
-            print(i.rect)
-            i.rect.w //= 2
-            self.image = pygame.Surface([i.rect.w, 1])
-            self.image.fill('yellow')
-
-            print(i.rect)
-            print()
+                check_spritecollid()
 
 
 class Border(pygame.sprite.Sprite):
@@ -235,6 +193,8 @@ class Point(pygame.sprite.Sprite):
         if limited_pos:
             x, y = random.randint(limited_pos['x'][0], limited_pos['x'][1]), random.randint(limited_pos['y'][0], limited_pos['y'][1])
         self.rect = self.image.get_rect().move(x, y)
+        self.mask = pygame.mask.from_surface(self.image)
+
 
 
 def generate_field(SIZE_FIELD, player=None):
