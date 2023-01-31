@@ -4,6 +4,9 @@ import sys
 import random
 
 FPS = 50
+SIZE_FIELD = 2700
+RANGEPOINTRADIUS = (3, 7)
+POINTCOUNT = random.randint(100, 150)
 
 
 def load_image(name, colorkey=None):
@@ -44,22 +47,11 @@ class Camera:
         self.dy = -(target.rect.y + target.rect.h // 2 - height // 2)
 
 
-# class Tile(pygame.sprite.Sprite):
-#     def __init__(self, tile_type, pos_x, pos_y):
-#         super().__init__(all_sprites, tiles_group)
-#         self.image = tile_images[tile_type]
-#         self.rect = self.image.get_rect().move(
-#             tile_width * pos_x, tile_height * pos_y)
-#
-#     def repait(self, img, y, x):
-#         self.image = img
-#         self.rect.x, self.rect.y = x, y
-
-
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, player_group)
         self.radius = 5
+        self.score = 5
         self.speed = 5
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                     pygame.SRCALPHA, 32)
@@ -67,43 +59,6 @@ class Player(pygame.sprite.Sprite):
                            (self.radius, self.radius), self.radius)
         self.rect = self.image.get_rect().move(10, 10)
         self.mask = pygame.mask.from_surface(self.image)
-
-
-    # def move(self, filename, pos):
-    #
-    #     for y in range(len(level_map)):
-    #         if '@' in level_map[y]:
-    #             x = level_map[y].find('@')
-    #             break
-    #     if (0 <= y + pos[1] < 11 and 0 <= x + pos[0] < 11) and \
-    #             level_map[y + pos[1]][x + pos[0]] != '#':
-    #         list_map = list(map(lambda z: z, level_map[y]))
-    #         list_map[x] = '.'
-    #         level_map[y] = ''.join(list_map)
-    #         list_map_new = list(map(lambda z: z, level_map[y + pos[1]]))
-    #         list_map_new[x + pos[0]] = '@'
-    #         level_map[y + pos[1]] = ''.join(list_map_new)
-    #
-    #         out = (tile_width * pos[0], tile_height * pos[1])
-    #         self.moves.append(out)
-    #
-    #         if pos[1] > 0:
-    #             level_map.append(level_map[0])
-    #             del level_map[0]
-    #         elif pos[1] < 0:
-    #             level_map.insert(0, level_map[-1])
-    #             del level_map[-1]
-    #         elif pos[0] > 0:
-    #             for i in range(len(level_map)):
-    #                 exm = list(map(str, level_map[i]))
-    #                 level_map[i] = level_map[i][1:] + level_map[i][0]
-    #         elif pos[0] < 0:
-    #             for i in range(len(level_map)):
-    #                 exm = list(map(str, level_map[i]))
-    #                 level_map[i] = exm[-1] + level_map[i][:-1]
-    #
-    #     with open(filename, 'w') as mapFile:
-    #         mapFile.write('\n'.join(level_map))
 
     def update(self, pos):
         self.rect = self.rect.move((pos[0], pos[1]))
@@ -150,6 +105,7 @@ class Player(pygame.sprite.Sprite):
         for i in point_group:
             if pygame.sprite.collide_mask(self, i):
                 self.radius += (i.rect.w // 4)
+                self.score += (i.rect.w // 4)
                 point_group.remove(i)
                 all_sprites.remove(i)
 
@@ -191,14 +147,15 @@ class Point(pygame.sprite.Sprite):
                            (self.radius, self.radius), self.radius)
         x, y = random.randint(1, SIZE_FIELD - self.radius * 2), random.randint(1, SIZE_FIELD - self.radius * 2)
         if limited_pos:
-            x, y = random.randint(limited_pos['x'][0], limited_pos['x'][1]), random.randint(limited_pos['y'][0], limited_pos['y'][1])
+            x, y = random.randint(limited_pos['x'][0], limited_pos['x'][1]), random.randint(limited_pos['y'][0],
+                                                                                            limited_pos['y'][1])
         self.rect = self.image.get_rect().move(x, y)
         self.mask = pygame.mask.from_surface(self.image)
 
 
 
-def generate_field(SIZE_FIELD, player=None):
-    global RANGEPOINTRADIUS
+def generate_field(player=None):
+    global RANGEPOINTRADIUS, SIZE_FIELD
     if not player:
         player = Player()
 
@@ -229,6 +186,7 @@ def generate_field(SIZE_FIELD, player=None):
             i.rect.y, i.rect.x = i.rect.y // 2, i.rect.x // 2
             i.image = pygame.Surface([i.rect.w, 1])
             i.image.fill('yellow')
+            SIZE_FIELD = i.rect.w
 
         for i in vertical_borders:
             i.rect.h //= 2
@@ -252,30 +210,31 @@ def generate_field(SIZE_FIELD, player=None):
         RANGEPOINTRADIUS = (2 if RANGEPOINTRADIUS[0] // 2 < 2 else RANGEPOINTRADIUS[0] // 2,
                             4 if RANGEPOINTRADIUS[1] // 2 < 2 else RANGEPOINTRADIUS[1] // 2)
 
-
-
-
         return player
 
 
 def start_screen():
     global POINTCOUNT, SIZE_FIELD
-    intro_text = ["ЗАСТАВКА", "",
-                  "Правила игры",
-                  ""]
+    intro_text = ['"ЭВОЛЮЦИЯ"', "",
+                  "Правила игры:",
+                  "-поедать микробов",
+                  "-увеличиться в размере"]
+    outro_text = ['Поздравляем!', '',
+                  'Вы Прошли Игру.']
 
     screen2 = pygame.Surface(screen.get_size())
 
     fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
     screen2.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
+    font = pygame.font.Font(None, 40)
     text_coord = 50
     for line in intro_text:
-        string_rendered = font.render(line, True, 'black')
+        string_rendered = font.render(line, True, 'white')
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
-        intro_rect.x = 10
+        intro_rect.x = (width // 2) - (intro_rect.w // 2) + 90
+        intro_rect.y += 45
         text_coord += intro_rect.height
         screen2.blit(string_rendered, intro_rect)
 
@@ -283,12 +242,13 @@ def start_screen():
     K_RIGHT = K_LEFT = K_UP = K_DOWN = False
     camera = Camera()
     starting = False
+    win = False
 
     while True:
         pos = [0, 0]
 
         if starting:
-            player, screen2 = generate_field(SIZE_FIELD)
+            player, screen2 = generate_field()
             starting = False
             screen.fill('black')
 
@@ -296,7 +256,7 @@ def start_screen():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.KEYDOWN:
-                if player:
+                if player and not win:
                     if event.key == pygame.K_RIGHT:
                         if K_LEFT:
                             K_LEFT = False
@@ -317,7 +277,7 @@ def start_screen():
                 if player is None:
                     starting = True
             elif event.type == pygame.KEYUP:
-                if player:
+                if player and not win:
                     if event.key == pygame.K_RIGHT:
                         K_RIGHT = False
                     elif event.key == pygame.K_LEFT:
@@ -327,9 +287,8 @@ def start_screen():
                     elif event.key == pygame.K_DOWN:
                         K_DOWN = False
             elif event.type == pygame.MOUSEBUTTONUP:
-                if player is None:
+                if player is None and not win:
                     starting = True
-
         if K_UP:
             pos[1] = player.speed * -1
         elif K_DOWN:
@@ -345,12 +304,10 @@ def start_screen():
                 player.speed -= (1 if player.speed > 1 else 0)
                 SIZE_FIELD = 1450
                 POINTCOUNT //= 2
-                print(SIZE_FIELD)
-                print(player.speed)
-                player = generate_field(SIZE_FIELD, player=player)
+                player = generate_field(player=player)
 
             # добавление микробов на поле
-            if len(list(point_group)) < POINTCOUNT and random.choice(list(map(lambda x: 0, range(10))) + [1]):
+            if len(list(point_group)) < POINTCOUNT and random.choice(list(map(lambda x: 0, range(40))) + [1]):
                 limited_pos = {'x': [], 'y': []}
                 # расчет координат новых микробов учитывая положение камеры
                 for i in vertical_borders:
@@ -359,7 +316,6 @@ def start_screen():
                     limited_pos['y'].append(i.rect.y)
 
                 p = Point(limited_pos)
-                # Scale()
             while len(list(point_group)) > POINTCOUNT:
                 remove_obj = random.choice(list(point_group))
                 point_group.remove(remove_obj)
@@ -370,10 +326,22 @@ def start_screen():
             for sprite in all_sprites:
                 camera.apply(sprite)
 
+            font = pygame.font.Font(None, 20)
+            text_coord = 10
+            text = {'SCORE': 'yellow', str(player.score): 'white'}
+            for line in text:
+                string_rendered = font.render(line, True, text[line])
+                intro_rect = string_rendered.get_rect()
+                intro_rect.y = text_coord
+                if text[line] == 'white':
+                    intro_rect.x += 70
+                else:
+                    intro_rect.x += 10
+                screen2.blit(string_rendered, intro_rect)
+
         point_group.draw(screen2)
         vertical_borders.draw(screen2)
-        # for i in horizontal_borders:
-        #     print(i.rect)
+
         horizontal_borders.draw(screen2)
         player_group.draw(screen2)
 
@@ -381,10 +349,30 @@ def start_screen():
 
         all_sprites.update(pos)
 
-        pygame.display.flip()
-        clock.tick(FPS)
         if player:
             screen2.fill('black')
+            if player.rect.w >= SIZE_FIELD * 0.7:
+
+                screen.fill('black')
+
+                screen2 = pygame.Surface(screen.get_size())
+                screen2.fill('black')
+
+                font = pygame.font.Font(None, 40)
+                text_coord = 50
+                for line in outro_text:
+                    string_rendered = font.render(line, True, 'white')
+                    intro_rect = string_rendered.get_rect()
+                    text_coord += 10
+                    intro_rect.top = text_coord
+                    intro_rect.x = (width // 2) - (intro_rect.w // 2)
+                    intro_rect.y += (height // 2) - 50 - 40
+                    text_coord += intro_rect.height
+                    screen2.blit(string_rendered, intro_rect)
+                screen.blit(screen2, (0, 0))
+
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 if __name__ == '__main__':
@@ -394,10 +382,6 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(size)
 
     clock = pygame.time.Clock()
-
-    SIZE_FIELD = 2700
-    RANGEPOINTRADIUS = (3, 7)
-    POINTCOUNT = random.randint(100, 150)
 
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
