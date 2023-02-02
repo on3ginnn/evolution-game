@@ -7,6 +7,7 @@ FPS = 50
 SIZE_FIELD = 2700
 RANGEPOINTRADIUS = (3, 7)
 POINTCOUNT = random.randint(100, 150)
+MOBBORDERWIDTH = 7
 
 
 def load_image(name, colorkey=None):
@@ -53,10 +54,12 @@ class Player(pygame.sprite.Sprite):
         self.radius = 5
         self.score = 5
         self.speed = 5
-        self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
-                                    pygame.SRCALPHA, 32)
-        pygame.draw.circle(self.image, pygame.Color("white"),
-                           (self.radius, self.radius), self.radius)
+        self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
+                                     (2 * self.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+        pygame.draw.circle(self.image, pygame.Color("white"), (self.radius, self.radius), self.radius)
+        pygame.draw.circle(self.image, pygame.Color('red'), (self.radius, self.radius), self.radius,
+                           MOBBORDERWIDTH - self.speed)
+
         self.rect = self.image.get_rect().move(10, 10)
         self.mask = pygame.mask.from_surface(self.image)
 
@@ -109,10 +112,12 @@ class Player(pygame.sprite.Sprite):
                 point_group.remove(i)
                 all_sprites.remove(i)
 
-                self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
-                                            pygame.SRCALPHA, 32)
-                pygame.draw.circle(self.image, pygame.Color("white"),
-                                   (self.radius, self.radius), self.radius)
+                self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
+                                             (2 * self.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+                pygame.draw.circle(self.image, pygame.Color("white"), (self.radius, self.radius), self.radius)
+                pygame.draw.circle(self.image, pygame.Color('red'), (self.radius, self.radius), self.radius,
+                                   MOBBORDERWIDTH - self.speed)
+
                 self.rect.x, self.rect.y = self.rect.x - (self.radius - old_radius), \
                     self.rect.y - (self.radius - old_radius)
                 self.rect.w, self.rect.h = self.radius * 2, self.radius * 2
@@ -132,7 +137,7 @@ class Border(pygame.sprite.Sprite):
         else:
             self.add(horizontal_borders)
             self.image = pygame.Surface([x2 - x1, 1])
-            self.image.fill('yellow')
+            self.image.fill('red')
             self.rect = pygame.Rect(x1, y1, x2 - x1, 1)
 
 
@@ -143,7 +148,7 @@ class Point(pygame.sprite.Sprite):
         self.score = self.radius
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                     pygame.SRCALPHA, 32)
-        pygame.draw.circle(self.image, (random.randint(20, 255), random.randint(20, 255), random.randint(20, 255)),
+        pygame.draw.circle(self.image, (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255)),
                            (self.radius, self.radius), self.radius)
         x, y = random.randint(1, SIZE_FIELD - self.radius * 2), random.randint(1, SIZE_FIELD - self.radius * 2)
         if limited_pos:
@@ -152,6 +157,27 @@ class Point(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(x, y)
         self.mask = pygame.mask.from_surface(self.image)
 
+
+class Mob(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__(all_sprites, mob_group)
+        self.radius = 5
+        self.speed = 5
+        self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
+                                     (2 * self.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+        pygame.draw.circle(self.image, (random.randint(50, 150), random.randint(50, 150), random.randint(50, 150)),
+                           (self.radius, self.radius), self.radius)
+        pygame.draw.circle(self.image, pygame.Color('red'), (self.radius, self.radius), self.radius,
+                           MOBBORDERWIDTH - self.speed)
+        x, y = random.randint(1, SIZE_FIELD - self.radius * 2), random.randint(1, SIZE_FIELD - self.radius * 2)
+        # if limited_pos:
+        #     x, y = random.randint(limited_pos['x'][0], limited_pos['x'][1]), random.randint(limited_pos['y'][0],
+        #                                                                                     limited_pos['y'][1])
+        self.rect = self.image.get_rect().move(x, y)
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def update(self):
+        pass
 
 
 def generate_field(player=None):
@@ -173,10 +199,11 @@ def generate_field(player=None):
         return player, screen2
     else:
         player.radius //= 2
-        player.image = pygame.Surface((2 * player.radius, 2 * player.radius),
-                                    pygame.SRCALPHA, 32)
-        pygame.draw.circle(player.image, pygame.Color("white"),
-                           (player.radius, player.radius), player.radius)
+        player.image = pygame.Surface(((2 * player.radius) + (MOBBORDERWIDTH * 2),
+                                       (2 * player.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+        pygame.draw.circle(player.image, pygame.Color("white"), (player.radius, player.radius), player.radius)
+        pygame.draw.circle(player.image, pygame.Color('red'), (player.radius, player.radius), player.radius,
+                           MOBBORDERWIDTH - player.speed)
         player.rect.x, player.rect.y = player.rect.x // 2, player.rect.y // 2
         player.rect.w, player.rect.h = player.radius * 2, player.radius * 2
 
@@ -185,7 +212,7 @@ def generate_field(player=None):
 
             i.rect.y, i.rect.x = i.rect.y // 2, i.rect.x // 2
             i.image = pygame.Surface([i.rect.w, 1])
-            i.image.fill('yellow')
+            i.image.fill('red')
             SIZE_FIELD = i.rect.w
 
         for i in vertical_borders:
@@ -205,8 +232,8 @@ def generate_field(player=None):
                 i.image = pygame.Surface((2 * i_radius, 2 * i_radius),
                                             pygame.SRCALPHA, 32)
                 pygame.draw.circle(i.image,
-                                   (random.randint(20, 255), random.randint(20, 255), random.randint(20, 255)),
-                                   (i_radius, i_radius), i_radius)
+                                   (random.randint(100, 200), random.randint(100, 200), random.randint(100, 200)),
+                                   (i.radius, i.radius), i.radius)
         RANGEPOINTRADIUS = (2 if RANGEPOINTRADIUS[0] // 2 < 2 else RANGEPOINTRADIUS[0] // 2,
                             4 if RANGEPOINTRADIUS[1] // 2 < 2 else RANGEPOINTRADIUS[1] // 2)
 
@@ -214,7 +241,7 @@ def generate_field(player=None):
 
 
 def start_screen():
-    global POINTCOUNT, SIZE_FIELD
+    global POINTCOUNT, SIZE_FIELD, MOBBORDERWIDTH
     intro_text = ['"ЭВОЛЮЦИЯ"', "",
                   "Правила игры:",
                   "-поедать микробов",
@@ -251,6 +278,7 @@ def start_screen():
             player, screen2 = generate_field()
             starting = False
             screen.fill('black')
+            Mob()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -302,6 +330,7 @@ def start_screen():
             # изменение скорости, по соотношению с размером игрока, и масштаба
             if player.radius >= 200:
                 player.speed -= (1 if player.speed > 1 else 0)
+                MOBBORDERWIDTH -= (1 if player.speed > 1 else 0)
                 SIZE_FIELD = 1450
                 POINTCOUNT //= 2
                 player = generate_field(player=player)
@@ -339,15 +368,12 @@ def start_screen():
                     intro_rect.x += 10
                 screen2.blit(string_rendered, intro_rect)
 
-        point_group.draw(screen2)
-        vertical_borders.draw(screen2)
-
-        horizontal_borders.draw(screen2)
-        player_group.draw(screen2)
+        all_sprites.draw(screen2)
 
         screen.blit(screen2, (0, 0))
 
-        all_sprites.update(pos)
+        player_group.update(pos)
+        mob_group.update()
 
         if player:
             screen2.fill('black')
@@ -384,7 +410,7 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
 
     all_sprites = pygame.sprite.Group()
-    tiles_group = pygame.sprite.Group()
+    mob_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
     vertical_borders = pygame.sprite.Group()
     horizontal_borders = pygame.sprite.Group()
