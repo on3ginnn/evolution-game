@@ -6,9 +6,10 @@ import random
 FPS = 50
 SIZE_FIELD = 2700
 RANGEPOINTRADIUS = (3, 7)
+MOBBORDERWIDTH = 10
+MOBCOUNT = random.randint(10, 15)
 POINTCOUNT = random.randint(100, 150)
-MOBBORDERWIDTH = 7
-
+PLAYERBORDERWIDTH = 10
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -51,14 +52,14 @@ class Camera:
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, player_group)
-        self.radius = 5
-        self.score = 5
+        self.radius = 10
+        self.score = 10
         self.speed = 5
         self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
                                      (2 * self.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
         pygame.draw.circle(self.image, pygame.Color("white"), (self.radius, self.radius), self.radius)
-        pygame.draw.circle(self.image, pygame.Color('red'), (self.radius, self.radius), self.radius,
-                           MOBBORDERWIDTH - self.speed)
+        pygame.draw.circle(self.image, pygame.Color('#00a851'), (self.radius, self.radius), self.radius,
+                           PLAYERBORDERWIDTH - self.speed)
 
         self.rect = self.image.get_rect().move(10, 10)
         self.mask = pygame.mask.from_surface(self.image)
@@ -115,8 +116,8 @@ class Player(pygame.sprite.Sprite):
                 self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
                                              (2 * self.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
                 pygame.draw.circle(self.image, pygame.Color("white"), (self.radius, self.radius), self.radius)
-                pygame.draw.circle(self.image, pygame.Color('red'), (self.radius, self.radius), self.radius,
-                                   MOBBORDERWIDTH - self.speed)
+                pygame.draw.circle(self.image, pygame.Color('#09ab3f'), (self.radius, self.radius), self.radius,
+                                   PLAYERBORDERWIDTH - self.speed)
 
                 self.rect.x, self.rect.y = self.rect.x - (self.radius - old_radius), \
                     self.rect.y - (self.radius - old_radius)
@@ -161,12 +162,12 @@ class Point(pygame.sprite.Sprite):
 class Mob(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, mob_group)
-        self.radius = 5
+        self.radius = 10
         self.speed = 5
         self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
                                      (2 * self.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
-        pygame.draw.circle(self.image, (random.randint(50, 150), random.randint(50, 150), random.randint(50, 150)),
-                           (self.radius, self.radius), self.radius)
+        self.mob_color = 'white'
+        pygame.draw.circle(self.image, self.mob_color, (self.radius, self.radius), self.radius)
         pygame.draw.circle(self.image, pygame.Color('red'), (self.radius, self.radius), self.radius,
                            MOBBORDERWIDTH - self.speed)
         x, y = random.randint(1, SIZE_FIELD - self.radius * 2), random.randint(1, SIZE_FIELD - self.radius * 2)
@@ -175,24 +176,113 @@ class Mob(pygame.sprite.Sprite):
         #                                                                                     limited_pos['y'][1])
         self.rect = self.image.get_rect().move(x, y)
         self.mask = pygame.mask.from_surface(self.image)
+        self.move_x = self.move_y = 0
+
+    def mob_destination(self):
+        new_move_x, new_move_y = 0, 0
+
+        for i in point_group:
+            if not self.move_x and not self.move_y:
+                self.move_x = i.rect.x - self.rect.x
+                self.move_y = i.rect.y - self.rect.y
+            if (abs(i.rect.x) - abs(self.rect.x)) + (abs(i.rect.y) - abs(self.rect.y)) < abs(self.move_x + self.move_y):
+                new_move_x = i.rect.x - self.rect.x
+                new_move_y = i.rect.y - self.rect.y
+                # print(new_move_x, new_move_y, '=======================')
+
+        if not self.move_x and not self.move_y:
+            self.move_x, self.move_y = new_move_x, new_move_y
+
+    def point_collide(self):
+        def check_spritecollid():
+            coef = 1
+            # по оси Oy
+            while pygame.sprite.spritecollideany(self, horizontal_borders):
+                self.rect = self.rect.move((0, coef))
+                if pygame.sprite.spritecollideany(self, horizontal_borders):
+                    coef *= -1
+                    self.rect = self.rect.move((0, coef))
+                else:
+                    continue
+
+                self.rect = self.rect.move((0, coef))
+                if pygame.sprite.spritecollideany(self, horizontal_borders):
+                    coef *= -1
+                    self.rect = self.rect.move((0, coef))
+                    coef += 1
+
+            coef = 1
+            # по оси Ox
+            while pygame.sprite.spritecollideany(self, vertical_borders):
+                self.rect = self.rect.move((coef, 0))
+                if pygame.sprite.spritecollideany(self, vertical_borders):
+                    coef *= -1
+                    self.rect = self.rect.move((coef, 0))
+                else:
+                    continue
+
+                self.rect = self.rect.move((coef, 0))
+                if pygame.sprite.spritecollideany(self, vertical_borders):
+                    coef *= -1
+                    self.rect = self.rect.move((coef, 0))
+                    coef += 1
+
+        old_radius = self.radius
+        for i in point_group:
+            if pygame.sprite.collide_mask(self, i):
+                self.radius += (i.rect.w // 4)
+                point_group.remove(i)
+                all_sprites.remove(i)
+
+                self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
+                                             (2 * self.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+                pygame.draw.circle(self.image, self.mob_color,
+                                   (self.radius, self.radius), self.radius)
+                pygame.draw.circle(self.image, pygame.Color('red'), (self.radius, self.radius), self.radius,
+                                   MOBBORDERWIDTH - self.speed)
+
+                self.rect.x, self.rect.y = self.rect.x - (self.radius - old_radius), \
+                                           self.rect.y - (self.radius - old_radius)
+                self.rect.w, self.rect.h = self.radius * 2, self.radius * 2
+                self.mask = pygame.mask.from_surface(self.image)
+
+                check_spritecollid()
 
     def update(self):
-        pass
+        # print()
+        if not pygame.sprite.spritecollideany(self, horizontal_borders) and \
+                not pygame.sprite.spritecollideany(self, vertical_borders):
+            self.mob_destination()
+            # print(self.move_x, self.move_y)
+            x = (1 if self.move_x > 0 else -1) if self.move_x else 0
+            y = (1 if self.move_y > 0 else -1) if self.move_y else 0
+            # self.move_x -= x
+
+            self.rect = self.rect.move(x, y)
+
+            self.point_collide()
+
+
+
 
 
 def generate_field(player=None):
-    global RANGEPOINTRADIUS, SIZE_FIELD
+    global RANGEPOINTRADIUS, SIZE_FIELD, POINTCOUNT, MOBCOUNT
     if not player:
-        player = Player()
 
         Border(0, 0, SIZE_FIELD - 1, 0)
         Border(0, SIZE_FIELD - 1, SIZE_FIELD - 1, SIZE_FIELD - 1)
         Border(0, 0, 0, SIZE_FIELD - 1)
         Border(SIZE_FIELD - 1, 0, SIZE_FIELD - 1, SIZE_FIELD - 1)
 
-        POINTCOUNT = random.randint(100, 150)
         for i in range(POINTCOUNT):
             Point()
+
+        for i in range(MOBCOUNT):
+            Mob()
+
+        player = Player()
+
 
         screen2 = pygame.Surface((SIZE_FIELD, SIZE_FIELD))
 
@@ -202,8 +292,8 @@ def generate_field(player=None):
         player.image = pygame.Surface(((2 * player.radius) + (MOBBORDERWIDTH * 2),
                                        (2 * player.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
         pygame.draw.circle(player.image, pygame.Color("white"), (player.radius, player.radius), player.radius)
-        pygame.draw.circle(player.image, pygame.Color('red'), (player.radius, player.radius), player.radius,
-                           MOBBORDERWIDTH - player.speed)
+        pygame.draw.circle(player.image, pygame.Color('#09ab3f'), (player.radius, player.radius), player.radius,
+                           PLAYERBORDERWIDTH - player.speed)
         player.rect.x, player.rect.y = player.rect.x // 2, player.rect.y // 2
         player.rect.w, player.rect.h = player.radius * 2, player.radius * 2
 
@@ -232,7 +322,7 @@ def generate_field(player=None):
                 i.image = pygame.Surface((2 * i_radius, 2 * i_radius),
                                             pygame.SRCALPHA, 32)
                 pygame.draw.circle(i.image,
-                                   (random.randint(100, 200), random.randint(100, 200), random.randint(100, 200)),
+                                   (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255)),
                                    (i.radius, i.radius), i.radius)
         RANGEPOINTRADIUS = (2 if RANGEPOINTRADIUS[0] // 2 < 2 else RANGEPOINTRADIUS[0] // 2,
                             4 if RANGEPOINTRADIUS[1] // 2 < 2 else RANGEPOINTRADIUS[1] // 2)
@@ -278,7 +368,6 @@ def start_screen():
             player, screen2 = generate_field()
             starting = False
             screen.fill('black')
-            Mob()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -373,6 +462,7 @@ def start_screen():
         screen.blit(screen2, (0, 0))
 
         player_group.update(pos)
+        print('-----------------------------------------------------------------------')
         mob_group.update()
 
         if player:
