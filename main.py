@@ -7,7 +7,7 @@ FPS = 50
 SIZE_FIELD = 3700
 RANGEPOINTRADIUS = (3, 7)
 MOBBORDERWIDTH = 8
-MOBCOUNT = random.randint(10, 15)
+MOBCOUNT = random.randint(5, 10)
 POINTCOUNT = random.randint(300, 400)
 PLAYERBORDERWIDTH = 8
 
@@ -53,6 +53,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, player_group)
         self.radius = 10
+        self.loss = False
         self.score = 20
         self.speed = 5
         self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
@@ -180,7 +181,8 @@ class Mob(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.move_x = self.move_y = 0
 
-    def mob_destination(self):
+    def mob_destination(self, player):
+        # мобы идут на поинты, если есть
         if point_group.sprites():
             new_rect = random.choice(point_group.sprites()).rect
             new_move_x, new_move_y = new_rect.x - self.radius, new_rect.y - self.radius
@@ -189,11 +191,17 @@ class Mob(pygame.sprite.Sprite):
                         abs(abs(self.rect.x) - abs(new_move_x)) + abs(abs(self.rect.y) - abs(new_move_y)):
                     new_move_x = i.rect.x - self.radius
                     new_move_y = i.rect.y - self.radius
+        # мобы идут на игрока, если расстояние до него меньше 100px и разница в размере не менее 10px
+        if player.rect.x in tuple(map(lambda x: x, range(self.rect.x - 100, self.rect.x + self.rect.w + 100))) and \
+                player.rect.y in \
+                tuple(map(lambda y: y, range(self.rect.y - 100, self.rect.y + self.rect.h + 100))) and \
+                abs(player.radius - self.radius) > 5:
+            new_move_x, new_move_y = player.rect.x, player.rect.y
 
-            self.move_x, self.move_y = new_move_x, new_move_y
+        self.move_x, self.move_y = new_move_x, new_move_y
 
 
-    def point_collide(self):
+    def point_collide(self, player):
         def check_spritecollid():
             coef = 1
             # по оси Oy
@@ -248,8 +256,15 @@ class Mob(pygame.sprite.Sprite):
                 self.mask = pygame.mask.from_surface(self.image)
                 check_spritecollid()
 
-    def update(self, *args):
-        self.mob_destination()
+        if not player.loss and player.rect.x + player.radius in \
+                tuple(map(lambda x: x, range(self.rect.x, self.rect.x + self.rect.w + 1))) and \
+                player.rect.y + player.radius in \
+                tuple(map(lambda y: y, range(self.rect.y, self.rect.y + self.rect.h + 1))) and \
+                pygame.sprite.collide_mask(player, self):
+            player.loss = True
+
+    def update(self, player):
+        self.mob_destination(player)
 
         move_x_const = move_y_const = 0
 
@@ -270,7 +285,7 @@ class Mob(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, horizontal_borders):
             self.rect = self.rect.move(0, (move_y_const * -1) * self.speed)
 
-        self.point_collide()
+        self.point_collide(player)
 
 
 def generate_field(player=None):
@@ -352,10 +367,12 @@ def start_screen():
     intro_text = ['"ЭВОЛЮЦИЯ"', "",
                   "Правила игры:",
                   "-поедать микробов",
-                  "-увеличиться в размере"]
-    outro_text = ['Поздравляем!', '',
-                  'Вы Прошли Игру.']
-
+                  "-остеригаться врагов"]
+    outro_text_win = ['Поздравляем!', '',
+                      'Вы Прошли Игру.']
+    outro_text_loss = ['Сожалеем!', '',
+                       'Вы Проиграли.',
+                       'Не отчаивайтесь и начните сначала.']
     screen2 = pygame.Surface(screen.get_size())
 
     fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
@@ -467,6 +484,9 @@ def start_screen():
             for sprite in all_sprites:
                 camera.apply(sprite)
 
+            screen2.fill('black')
+
+            # табол счета игрока
             font = pygame.font.Font(None, 20)
             text_coord = 10
             text = {'SCORE': 'yellow', str(player.score): 'white'}
@@ -480,33 +500,33 @@ def start_screen():
                     intro_rect.x += 10
                 screen2.blit(string_rendered, intro_rect)
 
-        all_sprites.draw(screen2)
+            # при выйгрыше
+            if player.loss or player.rect.w >= SIZE_FIELD * 0.7:
 
-        screen.blit(screen2, (0, 0))
-
-        player_group.update(pos)
-        mob_group.update()
-        # all_sprites.update(pos)
-        print()
-
-        # больший объект - сверху
-        new_all_sprites = sorted(all_sprites.sprites(), key=lambda x: x.rect.w)
-        for i in new_all_sprites:
-            all_sprites.remove(i)
-            all_sprites.add(i)
-
-
-        if player:
-            screen2.fill('black')
-            if player.rect.w >= SIZE_FIELD * 0.7:
+                for i in all_sprites:
+                    all_sprites.remove(i)
 
                 screen.fill('black')
 
                 screen2 = pygame.Surface(screen.get_size())
                 screen2.fill('black')
 
+                text = {'SCORE': 'yellow', str(player.score): 'white'}
+                for line in text:
+                    string_rendered = font.render(line, True, text[line])
+                    intro_rect = string_rendered.get_rect()
+                    intro_rect.y = 200
+                    if text[line] == 'white':
+                        intro_rect.x = (width // 2) - (intro_rect.w // 2) + 20
+                    else:
+                        intro_rect.x = (width // 2) - (intro_rect.w // 2) - 20
+                    screen2.blit(string_rendered, intro_rect)
+
                 font = pygame.font.Font(None, 40)
-                text_coord = 50
+                text_coord = 30
+                outro_text = outro_text_win
+                if player.loss:
+                    outro_text = outro_text_loss
                 for line in outro_text:
                     string_rendered = font.render(line, True, 'white')
                     intro_rect = string_rendered.get_rect()
@@ -517,6 +537,43 @@ def start_screen():
                     text_coord += intro_rect.height
                     screen2.blit(string_rendered, intro_rect)
                 screen.blit(screen2, (0, 0))
+
+        all_sprites.draw(screen2)
+
+        screen.blit(screen2, (0, 0))
+
+        player_group.update(pos)
+        mob_group.update(player)
+        print()
+
+        # больший объект - сверху
+        new_all_sprites = sorted(all_sprites.sprites(), key=lambda x: x.rect.w)
+        for i in new_all_sprites:
+            all_sprites.remove(i)
+            all_sprites.add(i)
+
+        if player:
+            pass
+            # screen2.fill('black')
+            # if player.rect.w >= SIZE_FIELD * 0.7:
+            #
+            #     screen.fill('black')
+            #
+            #     screen2 = pygame.Surface(screen.get_size())
+            #     screen2.fill('black')
+            #
+            #     font = pygame.font.Font(None, 40)
+            #     text_coord = 50
+            #     for line in outro_text:
+            #         string_rendered = font.render(line, True, 'white')
+            #         intro_rect = string_rendered.get_rect()
+            #         text_coord += 10
+            #         intro_rect.top = text_coord
+            #         intro_rect.x = (width // 2) - (intro_rect.w // 2)
+            #         intro_rect.y += (height // 2) - 50 - 40
+            #         text_coord += intro_rect.height
+            #         screen2.blit(string_rendered, intro_rect)
+            #     screen.blit(screen2, (0, 0))
 
         pygame.display.flip()
         clock.tick(FPS)
