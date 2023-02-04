@@ -4,11 +4,11 @@ import sys
 import random
 
 FPS = 50
-SIZE_FIELD = 2700
+SIZE_FIELD = 3700
 RANGEPOINTRADIUS = (3, 7)
 MOBBORDERWIDTH = 8
 MOBCOUNT = random.randint(10, 15)
-POINTCOUNT = random.randint(100, 150)
+POINTCOUNT = random.randint(300, 400)
 PLAYERBORDERWIDTH = 8
 
 def load_image(name, colorkey=None):
@@ -249,46 +249,28 @@ class Mob(pygame.sprite.Sprite):
                 check_spritecollid()
 
     def update(self, *args):
-        print(self.speed)
         self.mob_destination()
 
         move_x_const = move_y_const = 0
 
         if self.rect.y > self.move_y:
-            # self.rect.y -= 1
             move_y_const = -1
         elif self.rect.y < self.move_y:
-            # self.rect.y += 1
             move_y_const = +1
         self.rect = self.rect.move(0, move_y_const * self.speed)
-        # self.move_y += move_y_const
 
         if self.rect.x > self.move_x:
-            # self.rect.x -= 1
             move_x_const = -1
         elif self.rect.x < self.move_x:
-            # self.rect.x += 1
             move_x_const = +1
         self.rect = self.rect.move(move_x_const * self.speed, 0)
-        # self.move_x += move_x_const
 
         if pygame.sprite.spritecollideany(self, vertical_borders):
             self.rect = self.rect.move((move_x_const * -1) * self.speed, 0)
-            # self.move_x += move_x_const
         if pygame.sprite.spritecollideany(self, horizontal_borders):
             self.rect = self.rect.move(0, (move_y_const * -1) * self.speed)
-            # self.move_y += move_y_const
-
-            # self.mob_destination()
-            # x = (1 if self.move_x > 0 else -1) if self.move_x else 0
-            # y = (1 if self.move_y > 0 else -1) if self.move_y else 0
-
-            # self.rect = self.rect.move(x, y)
 
         self.point_collide()
-
-
-
 
 
 def generate_field(player=None):
@@ -466,7 +448,7 @@ def start_screen():
                 player = generate_field(player=player)
 
             # добавление микробов на поле
-            if len(list(point_group)) < POINTCOUNT and random.choice(list(map(lambda x: 0, range(40))) + [1]):
+            if len(list(point_group)) < POINTCOUNT and random.choice(list(map(lambda x: 0, range(30))) + [1]):
                 limited_pos = {'x': [], 'y': []}
                 # расчет координат новых микробов учитывая положение камеры
                 for i in vertical_borders:
