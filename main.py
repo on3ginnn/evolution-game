@@ -3,21 +3,18 @@ import os
 import sys
 import random
 
-FPS = 50
-SIZE_FIELD = 3700
-RANGEPOINTRADIUS = (3, 7)
-MOBBORDERWIDTH = 8
-MOBCOUNT = random.randint(5, 10)
-POINTCOUNT = random.randint(300, 400)
-PLAYERBORDERWIDTH = 8
-RATEPOINT = 30
-RATEMOB = 300
-MOBTRIGGER = 150
 
-# резервное копирование констант, на случай, если придется возобновить константы
-CONSTRESERVE = {'FPS': FPS, 'SIZE_FIELD': SIZE_FIELD, 'RANGEPOINTRADIUS': RANGEPOINTRADIUS,
-                'MOBBORDERWIDTH': MOBBORDERWIDTH, 'MOBCOUNT': MOBCOUNT, 'POINTCOUNT': POINTCOUNT,
-                'PLAYERBORDERWIDTH': PLAYERBORDERWIDTH, 'RATEPOINT': RATEPOINT, 'MOBTRIGGER': MOBTRIGGER}
+CONST = None
+FPS = 50
+
+
+# обновление констант, система реализации цикличного запуска игры,
+# то есть после победы или поражения игрок сразу же может начать играть новую игру
+def const_update():
+    global CONST
+    CONST = {'SIZE_FIELD': 3700, 'RANGEPOINTRADIUS': (3, 7),
+             'MOBBORDERWIDTH': 8, 'MOBCOUNT': random.randint(5, 10), 'POINTCOUNT': random.randint(300, 400),
+             'PLAYERBORDERWIDTH': 8, 'RATEPOINT': 30, 'RATEMOB': 300, 'MOBTRIGGER': 150}
 
 
 def load_image(name, colorkey=None):
@@ -65,11 +62,11 @@ class Player(pygame.sprite.Sprite):
         self.loss = False
         self.score = 20
         self.speed = 4
-        self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
-                                     (2 * self.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+        self.image = pygame.Surface(((2 * self.radius) + (CONST['MOBBORDERWIDTH'] * 2),
+                                     (2 * self.radius) + (CONST['MOBBORDERWIDTH'] * 2)), pygame.SRCALPHA, 32)
         pygame.draw.circle(self.image, pygame.Color("white"), (self.radius, self.radius), self.radius)
         pygame.draw.circle(self.image, pygame.Color('green'), (self.radius, self.radius), self.radius,
-                           PLAYERBORDERWIDTH - self.speed)
+                           CONST['PLAYERBORDERWIDTH'] - self.speed)
 
         self.rect = self.image.get_rect().move(10, 10)
         self.mask = pygame.mask.from_surface(self.image)
@@ -126,17 +123,16 @@ class Player(pygame.sprite.Sprite):
                 point_group.remove(i)
                 all_sprites.remove(i)
 
-                self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
-                                             (2 * self.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+                self.image = pygame.Surface(((2 * self.radius) + (CONST['MOBBORDERWIDTH'] * 2),
+                                             (2 * self.radius) + (CONST['MOBBORDERWIDTH'] * 2)), pygame.SRCALPHA, 32)
                 pygame.draw.circle(self.image, pygame.Color("white"), (self.radius, self.radius), self.radius)
                 pygame.draw.circle(self.image, pygame.Color('green'), (self.radius, self.radius), self.radius,
-                                   PLAYERBORDERWIDTH - self.speed)
+                                   CONST['PLAYERBORDERWIDTH'] - self.speed)
 
                 self.rect.x, self.rect.y = self.rect.x - (self.radius - old_radius), \
                     self.rect.y - (self.radius - old_radius)
                 self.rect.w, self.rect.h = self.radius * 2, self.radius * 2
                 self.mask = pygame.mask.from_surface(self.image)
-
                 check_spritecollid()
 
 
@@ -158,13 +154,14 @@ class Border(pygame.sprite.Sprite):
 class Point(pygame.sprite.Sprite):
     def __init__(self, limited_pos=None):
         super().__init__(all_sprites, point_group)
-        self.radius = random.randint(RANGEPOINTRADIUS[0], RANGEPOINTRADIUS[1])
+        self.radius = random.randint(CONST['RANGEPOINTRADIUS'][0], CONST['RANGEPOINTRADIUS'][1])
         self.score = self.radius
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius),
                                     pygame.SRCALPHA, 32)
         pygame.draw.circle(self.image, (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255)),
                            (self.radius, self.radius), self.radius)
-        x, y = random.randint(1, SIZE_FIELD - self.radius * 2), random.randint(1, SIZE_FIELD - self.radius * 2)
+        x, y = random.randint(1, CONST['SIZE_FIELD'] - self.radius * 2), \
+            random.randint(1, CONST['SIZE_FIELD'] - self.radius * 2)
 
         # расчет координат новых микробов, учитывая положение камеры
         if limited_pos:
@@ -182,13 +179,14 @@ class Mob(pygame.sprite.Sprite):
         self.radius = 10
         self.speed = 3
         self.score = 20
-        self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
-                                     (2 * self.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+        self.image = pygame.Surface(((2 * self.radius) + (CONST['MOBBORDERWIDTH'] * 2),
+                                     (2 * self.radius) + (CONST['MOBBORDERWIDTH'] * 2)), pygame.SRCALPHA, 32)
         self.mob_color = 'white'
         pygame.draw.circle(self.image, self.mob_color, (self.radius, self.radius), self.radius)
         pygame.draw.circle(self.image, pygame.Color('red'), (self.radius, self.radius), self.radius,
-                           MOBBORDERWIDTH - self.speed)
-        x, y = random.randint(1, SIZE_FIELD - self.radius * 2), random.randint(1, SIZE_FIELD - self.radius * 2)
+                           CONST['MOBBORDERWIDTH'] - self.speed)
+        x, y = random.randint(1, CONST['SIZE_FIELD'] - self.radius * 2), \
+            random.randint(1, CONST['SIZE_FIELD'] - self.radius * 2)
 
         # расчет координат новых мобов, учитывая положение камеры
         if limited_pos:
@@ -211,9 +209,11 @@ class Mob(pygame.sprite.Sprite):
                     new_move_y = i.rect.y - self.radius
         # мобы идут на игрока, если расстояние до него меньше MOBTRIGGER и разница в размере не менее 10px
         if player.rect.x in tuple(map(lambda x: x,
-                                      range(self.rect.x - MOBTRIGGER, self.rect.x + self.rect.w + MOBTRIGGER))) and \
+                                      range(self.rect.x - CONST['MOBTRIGGER'],
+                                            self.rect.x + self.rect.w + CONST['MOBTRIGGER']))) and \
                 player.rect.y in \
-                tuple(map(lambda y: y, range(self.rect.y - MOBTRIGGER, self.rect.y + self.rect.h + MOBTRIGGER))) and \
+                tuple(map(lambda y: y, range(self.rect.y - CONST['MOBTRIGGER'],
+                                             self.rect.y + self.rect.h + CONST['MOBTRIGGER']))) and \
                 abs(player.radius - self.radius) > 5:
             if player.radius < self.radius:
                 new_move_x, new_move_y = player.rect.x, player.rect.y
@@ -224,7 +224,6 @@ class Mob(pygame.sprite.Sprite):
 
     def point_collide(self, player):
         def check_spritecollid(obj=self):
-            print('----')
             coef = 1
             # по оси Oy
             while pygame.sprite.spritecollideany(obj, horizontal_borders):
@@ -268,12 +267,12 @@ class Mob(pygame.sprite.Sprite):
                 point_group.remove(i)
                 all_sprites.remove(i)
 
-                self.image = pygame.Surface(((2 * self.radius) + (MOBBORDERWIDTH * 2),
-                                             (2 * self.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+                self.image = pygame.Surface(((2 * self.radius) + (CONST['MOBBORDERWIDTH'] * 2),
+                                             (2 * self.radius) + (CONST['MOBBORDERWIDTH'] * 2)), pygame.SRCALPHA, 32)
                 pygame.draw.circle(self.image, self.mob_color,
                                    (self.radius, self.radius), self.radius)
                 pygame.draw.circle(self.image, pygame.Color('red'), (self.radius, self.radius), self.radius,
-                                   MOBBORDERWIDTH - self.speed)
+                                   CONST['MOBBORDERWIDTH'] - self.speed)
 
                 self.rect.x, self.rect.y = self.rect.x - (self.radius - old_radius), \
                                            self.rect.y - (self.radius - old_radius)
@@ -313,16 +312,17 @@ class Mob(pygame.sprite.Sprite):
                 pygame.sprite.collide_mask(self, player) and self.radius < player.radius:
             sound_eat.play()
 
+            # если игрок съел моба, начисление очков игроку происходит постепенно, чтобы не выйти за пределы поля
             player.score += (self.rect.w // 6)
             for i in range(self.rect.w // 8):
                 old_radius = player.radius
                 player.radius += 1
 
-                player.image = pygame.Surface(((2 * player.radius) + (MOBBORDERWIDTH * 2),
-                                              (2 * player.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+                player.image = pygame.Surface(((2 * player.radius) + (CONST['MOBBORDERWIDTH'] * 2),
+                                              (2 * player.radius) + (CONST['MOBBORDERWIDTH'] * 2)), pygame.SRCALPHA, 32)
                 pygame.draw.circle(player.image, pygame.Color("white"), (player.radius, player.radius), player.radius)
                 pygame.draw.circle(player.image, pygame.Color('green'), (player.radius, player.radius), player.radius,
-                                   PLAYERBORDERWIDTH - player.speed)
+                                   CONST['PLAYERBORDERWIDTH'] - player.speed)
 
                 player.rect.x, player.rect.y = player.rect.x - (player.radius - old_radius), \
                     player.rect.y - (player.radius - old_radius)
@@ -335,6 +335,7 @@ class Mob(pygame.sprite.Sprite):
             all_sprites.remove(self)
 
     def update(self, player):
+
         self.mob_destination(player)
 
         move_x_const = move_y_const = 0
@@ -360,32 +361,31 @@ class Mob(pygame.sprite.Sprite):
 
 
 def generate_field(player=None):
-    global RANGEPOINTRADIUS, SIZE_FIELD, POINTCOUNT, MOBCOUNT
+    global CONST
     if not player:
+        Border(0, 0, CONST['SIZE_FIELD'] - 1, 0)
+        Border(0, CONST['SIZE_FIELD'] - 1, CONST['SIZE_FIELD'] - 1, CONST['SIZE_FIELD'] - 1)
+        Border(0, 0, 0, CONST['SIZE_FIELD'] - 1)
+        Border(CONST['SIZE_FIELD'] - 1, 0, CONST['SIZE_FIELD'] - 1, CONST['SIZE_FIELD'] - 1)
 
-        Border(0, 0, SIZE_FIELD - 1, 0)
-        Border(0, SIZE_FIELD - 1, SIZE_FIELD - 1, SIZE_FIELD - 1)
-        Border(0, 0, 0, SIZE_FIELD - 1)
-        Border(SIZE_FIELD - 1, 0, SIZE_FIELD - 1, SIZE_FIELD - 1)
-
-        for i in range(POINTCOUNT):
+        for i in range(CONST['POINTCOUNT']):
             Point()
 
-        for i in range(MOBCOUNT):
+        for i in range(CONST['MOBCOUNT']):
             Mob()
 
         player = Player()
 
-        screen2 = pygame.Surface((SIZE_FIELD, SIZE_FIELD))
+        screen2 = pygame.Surface((CONST['SIZE_FIELD'], CONST['SIZE_FIELD']))
 
         return player, screen2
     else:
         player.radius //= 2
-        player.image = pygame.Surface(((2 * player.radius) + (MOBBORDERWIDTH * 2),
-                                       (2 * player.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+        player.image = pygame.Surface(((2 * player.radius) + (CONST['MOBBORDERWIDTH'] * 2),
+                                       (2 * player.radius) + (CONST['MOBBORDERWIDTH'] * 2)), pygame.SRCALPHA, 32)
         pygame.draw.circle(player.image, pygame.Color("white"), (player.radius, player.radius), player.radius)
         pygame.draw.circle(player.image, pygame.Color('green'), (player.radius, player.radius), player.radius,
-                           PLAYERBORDERWIDTH - player.speed)
+                           CONST['PLAYERBORDERWIDTH'] - player.speed)
         player.rect.x, player.rect.y = player.rect.x // 2, player.rect.y // 2
         player.rect.w, player.rect.h = player.radius * 2, player.radius * 2
 
@@ -395,7 +395,7 @@ def generate_field(player=None):
             i.rect.y, i.rect.x = i.rect.y // 2, i.rect.x // 2
             i.image = pygame.Surface([i.rect.w, 1])
             i.image.fill('red')
-            SIZE_FIELD = i.rect.w
+            CONST['SIZE_FIELD'] = i.rect.w
 
         for i in vertical_borders:
             i.rect.h //= 2
@@ -415,26 +415,26 @@ def generate_field(player=None):
                 pygame.draw.circle(i.image,
                                    (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255)),
                                    (i.radius, i.radius), i.radius)
-        RANGEPOINTRADIUS = (2 if RANGEPOINTRADIUS[0] // 2 < 2 else RANGEPOINTRADIUS[0] // 2,
-                            4 if RANGEPOINTRADIUS[1] // 2 < 2 else RANGEPOINTRADIUS[1] // 2)
+        CONST['RANGEPOINTRADIUS'] = (2 if CONST['RANGEPOINTRADIUS'][0] // 2 < 2 else CONST['RANGEPOINTRADIUS'][0] // 2,
+                                     4 if CONST['RANGEPOINTRADIUS'][1] // 2 < 2 else CONST['RANGEPOINTRADIUS'][1] // 2)
 
         for i in mob_group:
             i.rect.y //= 2
             i.rect.x //= 2
             i.radius //= 2
-            i.image = pygame.Surface(((2 * i.radius) + (MOBBORDERWIDTH * 2),
-                                      (2 * i.radius) + (MOBBORDERWIDTH * 2)), pygame.SRCALPHA, 32)
+            i.image = pygame.Surface(((2 * i.radius) + (CONST['MOBBORDERWIDTH'] * 2),
+                                      (2 * i.radius) + (CONST['MOBBORDERWIDTH'] * 2)), pygame.SRCALPHA, 32)
             i.mob_color = 'white'
             pygame.draw.circle(i.image, i.mob_color, (i.radius, i.radius), i.radius)
             pygame.draw.circle(i.image, pygame.Color('red'), (i.radius, i.radius), i.radius,
-                               MOBBORDERWIDTH - i.speed)
+                               CONST['MOBBORDERWIDTH'] - i.speed)
             i.rect.w, i.rect.h = i.radius * 2, i.radius * 2
 
         return player
 
 
 def start_screen():
-    global POINTCOUNT, SIZE_FIELD, MOBBORDERWIDTH, MOBTRIGGER
+    global CONST
     intro_text = ['"ЭВОЛЮЦИЯ"',
                   "Правила игры:",
                   "-поедать микробов",
@@ -443,8 +443,9 @@ def start_screen():
     outro_text_win = ['Поздравляем!', '',
                       'Вы Прошли Игру.']
     outro_text_loss = ['Сожалеем!', '',
-                       'Вы Проиграли.',
-                       'Не отчаивайтесь и начните сначала.']
+                       'Вы Проиграли.', '',
+                       'Не отчаивайтесь и начните сначала,',
+                       'зажав мышку или клавишу.']
     screen2 = pygame.Surface(screen.get_size())
 
     fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
@@ -466,29 +467,14 @@ def start_screen():
     camera = Camera()
     starting = False
     win = False
-    music_play = True
 
     while True:
         pos = [0, 0]
 
         if starting:
+            const_update()
             player, screen2 = generate_field()
             starting = False
-            FPS = CONSTRESERVE['FPS']
-            SIZE_FIELD = CONSTRESERVE['FPS']
-            RANGEPOINTRADIUS = CONSTRESERVE['FPS']
-            MOBBORDERWIDTH = CONSTRESERVE['FPS']
-            MOBCOUNT = CONSTRESERVE['FPS']
-            POINTCOUNT = CONSTRESERVE['FPS']
-            PLAYERBORDERWIDTH = CONSTRESERVE['FPS']
-            RATEPOINT = CONSTRESERVE['FPS']
-            RATEMOB = CONSTRESERVE['FPS']
-            MOBTRIGGER = CONSTRESERVE['FPS']
-
-            # резервное копирование констант, на случай, если придется возобновить константы
-            CONSTRESERVE = {'FPS': FPS, 'SIZE_FIELD': SIZE_FIELD, 'RANGEPOINTRADIUS': RANGEPOINTRADIUS,
-                            'MOBBORDERWIDTH': MOBBORDERWIDTH, 'MOBCOUNT': MOBCOUNT, 'POINTCOUNT': POINTCOUNT,
-                            'PLAYERBORDERWIDTH': PLAYERBORDERWIDTH, 'RATEPOINT': RATEPOINT, 'MOBTRIGGER': MOBTRIGGER}
             screen.fill('black')
 
         for event in pygame.event.get():
@@ -551,15 +537,15 @@ def start_screen():
             if player.radius >= 200:
                 new_level.play()
                 player.speed -= (1 if player.speed > 1 else 0)
-                MOBBORDERWIDTH -= (1 if player.speed > 1 else 0)
-                SIZE_FIELD //= 2
-                POINTCOUNT //= 3
-                MOBTRIGGER //= 2
+                CONST['MOBBORDERWIDTH'] -= (1 if player.speed > 1 else 0)
+                CONST['SIZE_FIELD'] //= 2
+                CONST['POINTCOUNT'] //= 3
+                CONST['MOBTRIGGER'] //= 2
                 player = generate_field(player=player)
 
             # спавн мобов на поле, если их количество меньше чем должно быть
-            if len(mob_group.sprites()) < MOBCOUNT and \
-                    random.choice(list(map(lambda x: 0, range(RATEMOB))) + [1]):
+            if len(mob_group.sprites()) < CONST['MOBCOUNT'] and \
+                    random.choice(list(map(lambda x: 0, range(CONST['RATEMOB']))) + [1]):
                 limited_pos = {'x': [], 'y': []}
                 # расчет координат новых микробов учитывая положение камеры
                 for i in vertical_borders:
@@ -570,8 +556,8 @@ def start_screen():
                 m = Mob(limited_pos)
 
             # спавн микробов на поле, если их количество меньше чем должно быть
-            if len(point_group.sprites()) < POINTCOUNT and \
-                    random.choice(list(map(lambda x: 0, range(RATEPOINT))) + [1]):
+            if len(point_group.sprites()) < CONST['POINTCOUNT'] and \
+                    random.choice(list(map(lambda x: 0, range(CONST['RATEPOINT']))) + [1]):
                 limited_pos = {'x': [], 'y': []}
                 # расчет координат новых микробов учитывая положение камеры
                 for i in vertical_borders:
@@ -603,7 +589,7 @@ def start_screen():
                 screen2.blit(string_rendered, intro_rect)
 
             # при выйгрыше или проигрыше
-            if player.loss or player.rect.w >= SIZE_FIELD * 0.7:
+            if player.loss or player.rect.w >= CONST['SIZE_FIELD'] * 0.7:
                 # нужно для корректной отрисовки экрана после смери игрока
                 for i in all_sprites:
                     i.kill()
@@ -627,29 +613,22 @@ def start_screen():
                 text_coord = 30
 
                 # алгоритм срабатывания звуков завершения игры
-                print(player.loss)
                 if player.loss:
-                    # sound_loss.play()
                     pygame.mixer.music.load("data/sounds/loss.ogg")
                     pygame.mixer.music.play(0)
                     outro_text = outro_text_loss
-                    music_play = False
                 elif not player.loss:
-                    # sound_win.play()
                     pygame.mixer.music.load("data/sounds/win.ogg")
                     pygame.mixer.music.play(0)
                     outro_text = outro_text_win
-                    music_play = False
-                else:
-                    print('-----------------------------------------=')
-                    pygame.mixer.stop()
+
                 for line in outro_text:
                     string_rendered = font.render(line, True, 'white')
                     intro_rect = string_rendered.get_rect()
                     text_coord += 10
                     intro_rect.top = text_coord
                     intro_rect.x = (width // 2) - (intro_rect.w // 2)
-                    intro_rect.y += (height // 2) - 50 - 40
+                    intro_rect.y += (height // 2) - 50 - 40 - 40
                     text_coord += intro_rect.height
                     screen2.blit(string_rendered, intro_rect)
                 screen.blit(screen2, (0, 0))
@@ -678,15 +657,14 @@ def start_screen():
 if __name__ == '__main__':
     pygame.mixer.pre_init(44100, -16, 1, 512)
     pygame.init()
-    pygame.display.set_caption('Перемещение героя. Новый уровень')
+    pygame.display.set_caption('Evolution')
     size = width, height = 1000, 700
     screen = pygame.display.set_mode(size)
 
     sound_point = pygame.mixer.Sound('data/sounds/point.ogg')
-    sound_loss = pygame.mixer.Sound('data/sounds/loss.ogg')
-    sound_win = pygame.mixer.Sound('data/sounds/win.ogg')
     sound_eat = pygame.mixer.Sound('data/sounds/eat.ogg')
     new_level = pygame.mixer.Sound('data/sounds/new_level.ogg')
+
     clock = pygame.time.Clock()
 
     all_sprites = pygame.sprite.Group()
