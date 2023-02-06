@@ -228,8 +228,6 @@ class Mob(pygame.sprite.Sprite):
             coef = 1
             # по оси Oy
             while pygame.sprite.spritecollideany(obj, horizontal_borders):
-                print(coef)
-
                 obj.rect = obj.rect.move((0, coef))
                 if pygame.sprite.spritecollideany(obj, horizontal_borders):
                     coef *= -1
@@ -246,7 +244,6 @@ class Mob(pygame.sprite.Sprite):
             coef = 1
             # по оси Ox
             while pygame.sprite.spritecollideany(obj, vertical_borders):
-                print(coef)
                 obj.rect = obj.rect.move((coef, 0))
                 if pygame.sprite.spritecollideany(obj, vertical_borders):
                     coef *= -1
