@@ -78,7 +78,7 @@ class Player(pygame.sprite.Sprite):
 
         if pygame.sprite.spritecollideany(self, vertical_borders) and pos[0]:
             self.rect.x += (pos[0] * -1)
-
+        # check_spritecollid функция на проверку нахождения объектов в пределах поля
         def check_spritecollid():
             coef = 1
             # по оси Oy
@@ -223,6 +223,7 @@ class Mob(pygame.sprite.Sprite):
         self.move_x, self.move_y = new_move_x, new_move_y
 
     def point_collide(self, player):
+        # check_spritecollid функция на проверку нахождения объектов в пределах поля
         def check_spritecollid(obj=self):
             coef = 1
             # по оси Oy
@@ -259,6 +260,7 @@ class Mob(pygame.sprite.Sprite):
                     obj.rect = obj.rect.move((coef, 0))
                     coef += 1
 
+        # поедание поинтов мобами
         old_radius = self.radius
         for i in point_group:
             if pygame.sprite.collide_mask(self, i):
@@ -360,6 +362,7 @@ class Mob(pygame.sprite.Sprite):
         self.point_collide(player)
 
 
+# обнавление объектов, спрайтов при начальной отрисовке и масщтабировании относительно размера игрока
 def generate_field(player=None):
     global CONST
     if not player:
@@ -637,18 +640,16 @@ def start_screen():
                 player = None
 
         all_sprites.draw(screen2)
-
         screen.blit(screen2, (0, 0))
 
-        if player:
-            player_group.update(pos)
-            mob_group.update(player)
+        player_group.update(pos)
+        mob_group.update(player)
 
-            # больший объект - сверху
-            new_all_sprites = sorted(all_sprites.sprites(), key=lambda x: x.rect.w)
-            for i in new_all_sprites:
-                all_sprites.remove(i)
-                all_sprites.add(i)
+        # больший объект - сверху
+        new_all_sprites = sorted(all_sprites.sprites(), key=lambda x: x.rect.w)
+        for i in new_all_sprites:
+            all_sprites.remove(i)
+            all_sprites.add(i)
 
         pygame.display.flip()
         clock.tick(FPS)
