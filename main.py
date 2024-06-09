@@ -656,7 +656,7 @@ if __name__ == '__main__':
     pygame.mixer.pre_init(44100, -16, 1, 512)
     pygame.init()
     pygame.display.set_caption('Evolution')
-    size = width, height = 1000, 700
+    size = width, height = 1920, 1080
     screen = pygame.display.set_mode(size)
 
     sound_point = pygame.mixer.Sound('data/sounds/point.ogg')
