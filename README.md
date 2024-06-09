@@ -1,5 +1,6 @@
 Evolution game
 
+![evolution_x550_720p](https://github.com/on3ginnn/evolution-game/assets/124593750/7266cb46-583f-4128-ba9d-520c5d2b9d65)
 
 
 В условиях зараженного космоса нужно сьесть все вражеские "бактерии".
