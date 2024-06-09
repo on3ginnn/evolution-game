@@ -2,7 +2,7 @@ Evolution game
 
 ![evolution](https://github.com/on3ginnn/evolution-game/evolution.gif)
 ![evolution](https://github.com/on3ginnn/evolution-game/assets/124593750/480868df-3bda-49a0-ad3d-303334a1a83b)
-
+<div style="width:100%;height:0;padding-bottom:56%;position:relative;"><iframe src="https://giphy.com/embed/nulY7vCjlcLIcIJT1Q" width="100%" height="100%" style="position:absolute" frameBorder="0" class="giphy-embed" allowFullScreen></iframe></div><p><a href="https://giphy.com/gifs/nulY7vCjlcLIcIJT1Q">via GIPHY</a></p>
 Суть игры
 В условиях зараженного космоса нужно сьесть все вражеские "бактерии".
 
