@@ -1,6 +1,6 @@
 Evolution game
 
-![](https://github.com/on3ginnn/evolution.gif)
+![](https://github.com/on3ginnn/evolution-game/evolution.gif)
 
 Суть игры
 В условиях зараженного космоса нужно сьесть все вражеские "бактерии".
